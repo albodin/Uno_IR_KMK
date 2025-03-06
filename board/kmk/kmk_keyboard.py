@@ -488,7 +488,7 @@ class KMKKeyboard:
         self.secondary_hid_type = secondary_hid_type
 
         if debug.enabled:
-            debug('Initialising ', self)
+            debug('Initializing ', self)
             debug('unicode_mode=', self.unicode_mode)
 
         self._init_hid()

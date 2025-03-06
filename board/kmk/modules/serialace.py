@@ -6,8 +6,22 @@ from kmk.utils import Debug
 debug = Debug(__name__)
 
 
+from kmk.extensions.rgb import RGB, AnimationModes
+
 class SerialACE(Module):
     buffer = bytearray()
+    rgb = None
+    
+    def __init__(self, rgb: RGB):
+        super().__init__()
+        self.rgb = rgb
+
+    def setColorFunc(self, h,s,v):
+        self.rgb.hue = h
+        self.rgb.sat = s
+        self.rgb.val = v
+        self.rgb.animation_mode = AnimationModes.STATIC
+        self.rgb.animate()
 
     def during_bootup(self, keyboard):
         try:
@@ -33,6 +47,7 @@ class SerialACE(Module):
         if data.in_waiting == 0:
             return
 
+        
         self.buffer.extend(data.read())
         idx = self.buffer.find(b'\n')
 
@@ -44,14 +59,13 @@ class SerialACE(Module):
         line = self.buffer[:idx]
         self.buffer = self.buffer[idx + 1 :]
 
-        try:
-            if debug.enabled:
-                debug(f'eval({line})')
-            ret = eval(line, {'keyboard': keyboard})
-            data.write(bytearray(str(ret) + '\n'))
-        except Exception as err:
-            if debug.enabled:
-                debug(f'error: {err}')
+        if "green" in line:
+            self.setColorFunc(85,255,255)
+        elif "red" in line:
+            self.setColorFunc(0,255,255)
+        elif "off" in line:
+            self.rgb.off()
+
 
     def after_hid_send(self, keyboard):
         pass
