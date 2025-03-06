@@ -9,10 +9,12 @@ import usb_hid
 
 
 def bootcfg(
-    sense: [microcontroller.Pin, digitalio.DigitalInOut],
+    sense: Optional[microcontroller.Pin, digitalio.DigitalInOut] = None,
     source: Optional[microcontroller.Pin, digitalio.DigitalInOut] = None,
+    autoreload: bool = True,
     boot_device: int = 0,
-    cdc: bool = True,
+    cdc_console: bool = True,
+    cdc_data: bool = False,
     consumer_control: bool = True,
     keyboard: bool = True,
     midi: bool = True,
@@ -37,9 +39,10 @@ def bootcfg(
         source.direction = digitalio.Direction.OUTPUT
         source.value = False
 
-    # sense pulled low -> skip boot configuration
-    if not sense.value:
-        return False
+    if not autoreload:
+        import supervisor
+
+        supervisor.runtime.autoreload = False
 
     # configure HID devices
     devices = []
@@ -77,13 +80,24 @@ def bootcfg(
         if hasattr(supervisor, 'set_usb_identification'):
             supervisor.set_usb_identification(*usb_id)
 
-    # Entries for cdc (REPL) and storage are intentionally evaluated last to
-    # ensure the board is debuggable, mountable and rescueable, in case any of
-    # the previous code throws an exception.
-    if not cdc:
+    # configure data serial
+    if cdc_data:
         import usb_cdc
 
-        usb_cdc.disable()
+        usb_cdc.enable(data=True)
+
+    # sense not provided or pulled low -> Skip boot configuration that may
+    # disable debug or rescue facilities.
+    if sense is None or not sense.value:
+        return False
+
+    # Entries for serial console (REPL) and storage are intentionally evaluated
+    # last to ensure the board is debuggable, mountable and rescuable, in case
+    # any of the previous code throws an exception.
+    if not cdc_console:
+        import usb_cdc
+
+        usb_cdc.enable(console=False)
 
     if not storage:
         import storage

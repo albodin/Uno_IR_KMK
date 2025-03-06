@@ -10,3 +10,6 @@ if (button.value):
     storage.disable_usb_drive()
 else:
     storage.enable_usb_drive()
+
+import usb_cdc
+usb_cdc.enable(console=True, data=True)
