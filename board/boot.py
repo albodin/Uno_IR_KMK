@@ -1,15 +1,13 @@
 import microcontroller
 import digitalio
-import storage
+from kmk.bootcfg import bootcfg
 
 button = digitalio.DigitalInOut(microcontroller.pin.GPIO5)
 button.direction = digitalio.Direction.INPUT
 button.pull = digitalio.Pull.UP
 
-if (button.value):
-    storage.disable_usb_drive()
-else:
-    storage.enable_usb_drive()
-
-import usb_cdc
-usb_cdc.enable(console=True, data=True)
+bootcfg(
+    cdc_console=True,
+    cdc_data=True,
+    storage=button.value
+)
